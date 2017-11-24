@@ -22,14 +22,14 @@ The temperature data was downloaded from the following Berkeley Earth project: "
 
 ## Plot Details
 
-The plot below shows land temperature from 1760 to 2013 (where available) for Berlin, Paris and Sydney.  A loess smoothing line is fitted through the markers for each city.
+The plot on the next slide shows land temperature from 1760 to 2013 (where available) for Berlin, Paris and Sydney.  A loess smoothing line is fitted through the markers for each city.
 
 You can:
 
 - Zoom in by click-drag
 - toggle markers and lines by clicking on the legend.
 
-## Plot of Temperatures
+## Historical Temperatures
 
 ```{r plotly, echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse) # for filtering, summarising
