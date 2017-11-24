@@ -1,0 +1,89 @@
+---
+title: "Historical Temperatures for Three Cities"
+subtitle: "Land temperature from 1760 to 2013 for Three Cities"
+author: "Greig Robertson"
+date: "11/23/2017"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Source Data
+
+The temperature data was downloaded from the following Berkeley Earth project: "Climate Change: Earth Surface Temperature Data - Exploring global temperatures since 1750".  More details are available here:
+
+- Berkeley Earth Project - http://berkeleyearth.org/data/
+- Source data downloaded from - https://www.kaggle.com/berkeleyearth/climate-change-earth-surface-temperature-data
+- The data set used from this was - GlobalLandTemperaturesByMajorCity.csv
+- License for use of data - https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+
+## Plot Details
+
+The plot below shows land temperature from 1760 to 2013 (where available) for Berlin, Paris and Sydney.  A loess smoothing line is fitted through the markers for each city.
+
+You can:
+
+- Zoom in by click-drag
+- toggle markers and lines by clicking on the legend.
+
+## Plot of Temperatures
+
+```{r plotly, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse) # for filtering, summarising
+library(lubridate) # for date processing
+library(plotly)    # for plotting
+
+# Load the downloaded data set
+temp_data      <- read_csv("~/data/climate-change-earth-surface-temperature-data/GlobalLandTemperaturesByMajorCity.csv")
+
+# Set up the cities that we want to plot
+cities         <- c("Berlin", "Paris", "Sydney")
+
+# Extract the temperature data for those cities
+# (note that temperatures around 1750 are very low, so this starts at 1760)
+city_temp      <- temp_data %>% filter(City %in% cities & dt > as.Date("1759-12-31"))
+
+# Aggregate temperature by year and by city (to reduce the size of the plot)
+city_temp_aggr <- city_temp %>% mutate(Year = year(dt))            %>%
+                                filter(!is.na(AverageTemperature)) %>%
+                                group_by(Year, City)               %>%
+                                summarise(AverageYearTemperature = mean(AverageTemperature))
+
+# Create a base Plotly object
+# setting the X & Y axis labels and legend postion
+p <- plot_ly(colors = "Set1") %>%
+      layout(xaxis  = list(title = 'Year'),
+             yaxis  = list(title = 'Mean Annual Temperature (Celsius)'),
+             legend = list(x = 0.05, y = 0.9, bgcolor = "#F0F0F0"))
+
+# For each city:
+#   extract the temperature data per year
+#   fit a loess line through the temperature data
+#   Note - need to work out how to get the markers and lines the same colour
+for (city in cities) {
+
+  city_data   <- city_temp_aggr %>% filter(City == city)
+
+  # note that changing the span increases/decreases the bumpiness of the line
+  smooth_line <- fitted( loess(city_data$AverageYearTemperature ~ city_data$Year, span = 0.3) )
+
+  # Add a marker for the temperature measurement
+  p <- add_markers(p,
+                   x          = city_data$Year,
+                   y          = city_data$AverageYearTemperature,
+                   showlegend = TRUE,
+                   name       = city)
+
+  # Add the calculated loess smooth line
+  p <-  add_lines(p,
+                  x          = city_data$Year,
+                  y          = smooth_line,
+                  showlegend = TRUE,
+                  name       = paste(city, "loess"))
+}
+
+p
+```
